@@ -1,0 +1,206 @@
+/**
+ * AI Exercise Generator
+ * 
+ * Uses OpenAI to dynamically generate exercises based on focus and context.
+ * No templates - fully AI-driven exercise selection and programming.
+ */
+
+import { ExercisePlan, UserProfile } from "./types";
+import { callJSON, isOpenAIAvailable, getDefaultPlannerModel } from "./openaiClient";
+
+interface ExerciseGenerationContext {
+  focus: string;
+  tags: string[];
+  profile: UserProfile;
+  sessionLengthMin?: number;
+}
+
+interface AIExerciseResponse {
+  exercises: Array<{
+    name: string;
+    sets: number;
+    reps: number | string; // Can be "8-12" or "30s"
+    rest_sec: number;
+    load_kg?: number | null;
+    estimated_duration_sec: number;
+    notes?: string;
+  }>;
+  session_notes?: string;
+}
+
+/**
+ * Generate exercises using AI
+ */
+export async function generateExercisesWithAI(
+  context: ExerciseGenerationContext
+): Promise<ExercisePlan[]> {
+  if (!isOpenAIAvailable()) {
+    console.log("[Exercise Generator] OpenAI not available, using simple fallback");
+    return generateFallbackExercises(context);
+  }
+
+  try {
+    const systemPrompt = buildSystemPrompt();
+    const userPrompt = buildUserPrompt(context);
+
+    console.log("[Exercise Generator] Calling OpenAI to generate exercises...");
+
+    const response = await callJSON<AIExerciseResponse>(
+      getDefaultPlannerModel(),
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      "{ exercises: [...], session_notes: string }",
+      {
+        temperature: 0.8, // Higher creativity for exercise variety
+        maxTokens: 1500,
+        retries: 2,
+      }
+    );
+
+    console.log(`[Exercise Generator] AI generated ${response.exercises.length} exercises`);
+
+    // Convert AI response to ExercisePlan format
+    const exercises: ExercisePlan[] = response.exercises.map((ex, index) => ({
+      name: ex.name + (ex.notes ? ` - ${ex.notes}` : ""),
+      sets: ex.sets,
+      reps: typeof ex.reps === "string" ? null : ex.reps,
+      rest_sec: ex.rest_sec,
+      rir: null, // User fills this during workout
+      load_kg: ex.load_kg || null,
+      estimated_duration: ex.estimated_duration_sec,
+      order_index: index,
+    }));
+
+    return exercises;
+  } catch (error) {
+    console.error("[Exercise Generator] AI generation failed:", error);
+    console.log("[Exercise Generator] Falling back to simple generation");
+    return generateFallbackExercises(context);
+  }
+}
+
+function buildSystemPrompt(): string {
+  return `You are an expert strength & conditioning coach generating workout exercises.
+
+**Your Task:**
+Generate a complete list of exercises for a training session based on the focus and user context.
+
+**Key Principles:**
+1. **Equipment**: ONLY use equipment the user has access to
+2. **Variety**: Choose diverse exercises that complement each other
+3. **Progression**: Order exercises from compound to isolation, heavy to light
+4. **Practical**: All exercises must be realistic and safe
+5. **Volume**: Appropriate total volume for the session length
+
+**Exercise Selection:**
+- Start with main compound movements
+- Include accessory work
+- Consider muscle balance (push/pull, upper/lower)
+- Respect user dislikes
+- Use proper exercise names (e.g., "Dumbbell Bench Press" not "DB Press")
+
+**Programming:**
+- Sets: 3-5 for main lifts, 2-4 for accessories
+- Reps: 5-8 for strength, 8-12 for hypertrophy, 12-15 for endurance/accessories
+- Rest: 180s for heavy compounds, 120s for moderate, 60-90s for accessories
+- Load (kg): Suggest moderate starting weights (can be null if bodyweight)
+- Duration: Realistic time including rest periods
+
+**Format:**
+Return JSON with an array of exercises. Each exercise needs:
+- name: Full exercise name
+- sets: Number of sets
+- reps: Number of reps (or "30s" for time-based)
+- rest_sec: Rest period in seconds
+- load_kg: Suggested weight in kg (null if bodyweight)
+- estimated_duration_sec: Total time for this exercise (sets + reps + rest)
+- notes: Optional short coaching cue (≤50 chars)
+
+**Do NOT:**
+- Include RIR (user tracks this during workout)
+- Use equipment the user doesn't have
+- Suggest exercises from the user's dislike list
+- Create dangerous or unrealistic exercises`;
+}
+
+function buildUserPrompt(context: ExerciseGenerationContext): string {
+  const { focus, tags, profile, sessionLengthMin = 60 } = context;
+
+  const cleanProfile = {
+    goal: profile.goal || "general fitness",
+    equipment: profile.accessible_equipment || "bodyweight only",
+    dislikes: profile.dislikes || "none",
+    session_length: sessionLengthMin,
+  };
+
+  return `Generate exercises for this workout:
+
+**Session Details:**
+- Focus: ${focus}
+- Tags: ${tags.join(", ")}
+- Target Duration: ${sessionLengthMin} minutes
+
+**User Profile:**
+${JSON.stringify(cleanProfile, null, 2)}
+
+**Requirements:**
+- Generate 4-6 exercises (adjust based on session length)
+- Use ONLY equipment from: "${cleanProfile.equipment}"
+- Avoid: "${cleanProfile.dislikes}"
+- Total session should fit in ~${sessionLengthMin} minutes
+
+Return JSON:
+{
+  "exercises": [
+    {
+      "name": "Exercise Name",
+      "sets": 4,
+      "reps": 8,
+      "rest_sec": 180,
+      "load_kg": 20,
+      "estimated_duration_sec": 720,
+      "notes": "Short cue"
+    }
+  ],
+  "session_notes": "Brief session overview"
+}`;
+}
+
+/**
+ * Simple fallback when AI is not available
+ */
+function generateFallbackExercises(context: ExerciseGenerationContext): ExercisePlan[] {
+  const { focus } = context;
+  
+  // Very simple fallback based on focus
+  const fallbackMap: Record<string, ExercisePlan[]> = {
+    upper: [
+      { name: "Push-ups", sets: 3, reps: 12, rest_sec: 90, rir: null, estimated_duration: 360, order_index: 0 },
+      { name: "Dumbbell Row", sets: 3, reps: 10, rest_sec: 90, rir: null, load_kg: 15, estimated_duration: 360, order_index: 1 },
+      { name: "Pike Push-ups", sets: 3, reps: 10, rest_sec: 90, rir: null, estimated_duration: 360, order_index: 2 },
+      { name: "Plank", sets: 3, reps: null, rest_sec: 60, rir: null, estimated_duration: 240, order_index: 3 },
+    ],
+    lower: [
+      { name: "Bodyweight Squats", sets: 3, reps: 15, rest_sec: 90, rir: null, estimated_duration: 450, order_index: 0 },
+      { name: "Lunges", sets: 3, reps: 12, rest_sec: 90, rir: null, estimated_duration: 420, order_index: 1 },
+      { name: "Glute Bridges", sets: 3, reps: 15, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 2 },
+      { name: "Calf Raises", sets: 3, reps: 20, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 3 },
+    ],
+    conditioning: [
+      { name: "Burpees", sets: 4, reps: 10, rest_sec: 60, rir: null, estimated_duration: 400, order_index: 0 },
+      { name: "Mountain Climbers", sets: 4, reps: 20, rest_sec: 60, rir: null, estimated_duration: 400, order_index: 1 },
+      { name: "Jumping Jacks", sets: 3, reps: 30, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 2 },
+    ],
+    mobility: [
+      { name: "Cat-Cow Stretch", sets: 3, reps: null, rest_sec: 30, rir: null, estimated_duration: 180, order_index: 0 },
+      { name: "Hip Flexor Stretch", sets: 2, reps: null, rest_sec: 30, rir: null, estimated_duration: 150, order_index: 1 },
+      { name: "Shoulder Circles", sets: 2, reps: null, rest_sec: 0, rir: null, estimated_duration: 60, order_index: 2 },
+      { name: "Spinal Twists", sets: 2, reps: null, rest_sec: 30, rir: null, estimated_duration: 120, order_index: 3 },
+    ],
+  };
+
+  return fallbackMap[focus] || fallbackMap.upper;
+}
+
