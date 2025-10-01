@@ -24,3 +24,5 @@ yarn-error.log*
 
 /src/flowbite-theme.ts
 .qodo
+
+.env
