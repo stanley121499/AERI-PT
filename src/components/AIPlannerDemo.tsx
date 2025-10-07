@@ -18,6 +18,7 @@ import {
   exercisePlanToDbInsert,
 } from "../ai";
 import type { CompiledDay } from "../ai";
+import { getTodayString } from "../utils/dateUtils";
 
 export function AIPlannerDemo(): React.JSX.Element {
   const { user } = useAuthContext();
@@ -82,7 +83,7 @@ export function AIPlannerDemo(): React.JSX.Element {
 
       // Build context
       addLog("📋 Building planning context...");
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayString();
       const profile = userInfoToProfile(userInfo);
 
       addLog(`  - Today: ${today}`);

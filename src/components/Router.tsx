@@ -16,11 +16,15 @@ import { AIPlannerDemo } from "./AIPlannerDemo";
  */
 export function Router(): React.JSX.Element {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
+  const [searchParams, setSearchParams] = useState<URLSearchParams>(
+    new URLSearchParams(window.location.search)
+  );
   const { user, loading } = useAuthContext();
 
   useEffect(() => {
     const handlePopState = (): void => {
       setCurrentPath(window.location.pathname);
+      setSearchParams(new URLSearchParams(window.location.search));
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -28,11 +32,15 @@ export function Router(): React.JSX.Element {
   }, []);
 
   /**
-   * Navigate to a new path
+   * Navigate to a new path with optional query parameters
    */
-  const navigate = (path: string): void => {
-    window.history.pushState({}, "", path);
+  const navigate = (path: string, params?: Record<string, string>): void => {
+    const url = params 
+      ? `${path}?${new URLSearchParams(params).toString()}`
+      : path;
+    window.history.pushState({}, "", url);
     setCurrentPath(path);
+    setSearchParams(new URLSearchParams(params || {}));
   };
 
   // Make navigate function available globally for navigation
@@ -82,7 +90,7 @@ export function Router(): React.JSX.Element {
     case "/workouts":
       return (
         <ProtectedRoute>
-          <WorkoutPage />
+          <WorkoutPage workoutId={searchParams.get("id") || undefined} />
         </ProtectedRoute>
       );
     case "/calendar":

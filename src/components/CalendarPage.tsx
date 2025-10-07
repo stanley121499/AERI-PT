@@ -6,6 +6,7 @@ import { useExerciseContext, Exercise } from "../contexts/ExerciseContext";
 import { useUserInfoContext } from "../contexts/UserInfoContext";
 import { planAndCompile, userInfoToProfile, exercisePlanToDbInsert, dbWorkoutToHistoryDay, dbEventToUserEvent } from "../ai";
 import { supabase } from "../lib/supabase";
+import { getLocalDateString, getTodayString } from "../utils/dateUtils";
 
 /**
  * Dedicated calendar page for workout planning and scheduling
@@ -109,7 +110,7 @@ export function CalendarPage(): React.JSX.Element {
 
   // Get upcoming workouts
   const upcomingWorkouts = useMemo(() => {
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = getTodayString();
     return workouts
       .filter(w => w.date && w.date >= todayStr && w.state !== 'completed')
       .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
@@ -135,7 +136,7 @@ export function CalendarPage(): React.JSX.Element {
   };
   
   const getWorkoutForDate = (date: Date): Workout | undefined => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
     return workouts.find(w => w.date === dateStr);
   };
   
@@ -165,7 +166,7 @@ export function CalendarPage(): React.JSX.Element {
   };
 
   const handleStartWorkout = (workoutId: string): void => {
-    (window as any).navigate('/workouts');
+    (window as any).navigate("/workouts", { id: workoutId });
   };
 
   const handleDeleteWorkout = async (workoutId: string): Promise<void> => {
@@ -189,8 +190,9 @@ export function CalendarPage(): React.JSX.Element {
 
     try {
       // Get recent workouts for context
+      const dateStr = getLocalDateString(selectedDate);
       const recentWorkouts = workouts
-        .filter(w => w.date && w.date < selectedDate.toISOString().split('T')[0])
+        .filter(w => w.date && w.date < dateStr)
         .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
         .slice(0, 14);
 
@@ -208,7 +210,6 @@ export function CalendarPage(): React.JSX.Element {
       const events = (userEvents || []).map(dbEventToUserEvent);
 
       // Build context
-      const dateStr = selectedDate.toISOString().split('T')[0];
       const context = {
         today: dateStr,
         horizon_days: 1,
@@ -231,7 +232,7 @@ export function CalendarPage(): React.JSX.Element {
 
       // Create workout with the selected date
       const workout = await createWorkout({
-        date: selectedDate.toISOString().split('T')[0],
+        date: dateStr,
         action: day.action,
         focus: day.focus,
         tags: day.tags,
@@ -273,7 +274,7 @@ export function CalendarPage(): React.JSX.Element {
    */
   const handleQuickCreate = async (focusArea: string): Promise<void> => {
     const workout = await createWorkout({
-      date: selectedDate.toISOString().split('T')[0],
+      date: getLocalDateString(selectedDate),
       action: 'workout',
       focus: focusArea,
       state: 'planned',

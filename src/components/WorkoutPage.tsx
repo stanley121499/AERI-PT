@@ -3,12 +3,17 @@ import { useAuthContext } from "../contexts/AuthContext";
 import { useWorkoutContext, Workout } from "../contexts/WorkoutContext";
 import { useExerciseContext, Exercise } from "../contexts/ExerciseContext";
 import { Sidebar } from "./Sidebar";
+import { getTodayString } from "../utils/dateUtils";
 
 /**
  * Workout execution page for active workout sessions
  * Now connected to real database through contexts
  */
-export function WorkoutPage(): React.JSX.Element {
+interface WorkoutPageProps {
+  workoutId?: string;
+}
+
+export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element {
   const { user } = useAuthContext();
   const { workouts, updateWorkout } = useWorkoutContext();
   const { getExercisesByWorkout, updateExercise } = useExerciseContext();
@@ -23,7 +28,7 @@ export function WorkoutPage(): React.JSX.Element {
   const [showWorkoutComplete, setShowWorkoutComplete] = useState<boolean>(false);
   const [activeWorkoutStarted, setActiveWorkoutStarted] = useState<boolean>(false);
 
-  // Load today's workout or most recent workout
+  // Load specific workout by ID, or today's workout, or most recent workout
   useEffect(() => {
     const loadWorkout = async () => {
       if (!user || workouts.length === 0) {
@@ -31,9 +36,18 @@ export function WorkoutPage(): React.JSX.Element {
         return;
       }
 
-      // Find today's workout or the most recent one
-      const today = new Date().toISOString().split('T')[0];
-      let workout = workouts.find(w => w.date === today && w.state !== 'completed');
+      let workout: Workout | undefined;
+
+      // If workoutId is provided, prioritize loading that specific workout
+      if (workoutId) {
+        workout = workouts.find(w => w.id === workoutId);
+      }
+
+      // If no specific workout ID or not found, find today's workout
+      if (!workout) {
+        const today = getTodayString();
+        workout = workouts.find(w => w.date === today && w.state !== 'completed');
+      }
       
       // If no workout for today, get the most recent planned workout
       if (!workout) {
@@ -57,7 +71,7 @@ export function WorkoutPage(): React.JSX.Element {
     };
 
     loadWorkout();
-  }, [user, workouts, getExercisesByWorkout]);
+  }, [user, workouts, getExercisesByWorkout, workoutId]);
 
   /**
    * Start the workout

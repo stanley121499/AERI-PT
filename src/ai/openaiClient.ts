@@ -94,7 +94,8 @@ export async function callJSON<T = unknown>(
 
   while (attempt <= retries) {
     try {
-      const response = await client.chat.completions.create({
+      // Try with response_format first, fall back if not supported
+      const requestParams: OpenAI.Chat.ChatCompletionCreateParams = {
         model,
         messages: messages.map((m) => ({
           role: m.role,
@@ -102,8 +103,15 @@ export async function callJSON<T = unknown>(
         })),
         temperature,
         max_tokens: maxTokens,
-        response_format: { type: "json_object" }, // Force JSON output
-      });
+      };
+
+      // Only add response_format for models that support it
+      // gpt-4o, gpt-4o-mini, gpt-4-turbo and newer models support json_object
+      if (model.includes("gpt-4o") || model.includes("gpt-4-turbo") || model.includes("gpt-3.5-turbo-1106")) {
+        requestParams.response_format = { type: "json_object" };
+      }
+
+      const response = await client.chat.completions.create(requestParams);
 
       const content = response.choices[0]?.message?.content;
 
@@ -117,6 +125,16 @@ export async function callJSON<T = unknown>(
 
     } catch (error) {
       lastError = error as Error;
+      
+      // If it's a response_format error, retry without it
+      if (
+        (error as Error).message?.includes("response_format") &&
+        attempt === 0
+      ) {
+        console.warn("Model doesn't support response_format, retrying without it...");
+        attempt++;
+        continue;
+      }
 
       // If it's a parse error and we have retries left, try again with corrective message
       if (

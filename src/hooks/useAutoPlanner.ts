@@ -16,6 +16,7 @@ import {
   dbEventToUserEvent,
   dbWorkoutToHistoryDay,
 } from "../ai";
+import { getTodayString, getLocalDateString } from "../utils/dateUtils";
 
 interface AutoPlannerStatus {
   isChecking: boolean;
@@ -70,11 +71,11 @@ export function useAutoPlanner(options: UseAutoPlannerOptions = {}) {
     }
 
     const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    const todayStr = getTodayString();
 
     const futureDate = new Date(today);
     futureDate.setDate(today.getDate() + horizonDays);
-    const futureDateStr = futureDate.toISOString().split("T")[0];
+    const futureDateStr = getLocalDateString(futureDate);
 
     console.log(`[Auto Planner] Checking for gaps from ${todayStr} to ${futureDateStr}`);
 
@@ -123,13 +124,13 @@ export function useAutoPlanner(options: UseAutoPlannerOptions = {}) {
       console.log("[Auto Planner] Starting automatic plan generation...");
 
       // Build planning context
-      const today = new Date().toISOString().split("T")[0];
+      const today = getTodayString();
       const profile = userInfoToProfile(userInfo);
 
       // Fetch events
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + horizonDays);
-      const futureDateStr = futureDate.toISOString().split("T")[0];
+      const futureDateStr = getLocalDateString(futureDate);
 
       const { data: events } = await supabase
         .from("user_events")
@@ -142,7 +143,7 @@ export function useAutoPlanner(options: UseAutoPlannerOptions = {}) {
       // Fetch recent history
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 7);
-      const pastDateStr = pastDate.toISOString().split("T")[0];
+      const pastDateStr = getLocalDateString(pastDate);
 
       const { data: recentWorkouts } = await supabase
         .from("workouts")
