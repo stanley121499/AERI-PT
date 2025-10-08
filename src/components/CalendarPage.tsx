@@ -170,10 +170,56 @@ export function CalendarPage(): React.JSX.Element {
   };
 
   const handleDeleteWorkout = async (workoutId: string): Promise<void> => {
+    console.log("Delete workout called with ID:", workoutId);
     if (window.confirm('Are you sure you want to delete this workout?')) {
-      await deleteWorkout(workoutId);
-      setShowWorkoutDetailModal(false);
-      setSelectedWorkout(null);
+      console.log("User confirmed deletion, calling deleteWorkout...");
+      try {
+        // First delete associated exercises with more specific error handling
+        console.log("Deleting exercises for workout:", workoutId);
+        const { error: exerciseError, count: exerciseCount } = await supabase
+          .from("exercise")
+          .delete({ count: 'exact' })
+          .eq("workout_id", workoutId);
+          
+        if (exerciseError) {
+          console.error("Error deleting exercises:", exerciseError);
+          alert(`Failed to delete exercises: ${exerciseError.message}`);
+          return;
+        } else {
+          console.log(`Successfully deleted ${exerciseCount || 0} exercises for workout:`, workoutId);
+        }
+
+        // Add a small delay to ensure the database transaction is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Then delete the workout with more specific error handling
+        console.log("Now deleting the workout itself...");
+        const { error: workoutError } = await supabase
+          .from("workouts")
+          .delete()
+          .eq("id", workoutId);
+
+        if (workoutError) {
+          console.error("Error deleting workout:", workoutError);
+          alert(`Failed to delete workout: ${workoutError.message}`);
+          return;
+        }
+
+        console.log("Workout deleted successfully from database");
+        
+        // Close modal and clear selection
+        setShowWorkoutDetailModal(false);
+        setSelectedWorkout(null);
+        
+        // Show success message
+        alert("Workout deleted successfully! You can now generate a new one.");
+        
+      } catch (error) {
+        console.error("Exception during deletion:", error);
+        alert("Error deleting workout: " + error);
+      }
+    } else {
+      console.log("User cancelled deletion");
     }
   };
 

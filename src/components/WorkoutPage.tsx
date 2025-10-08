@@ -275,6 +275,7 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
       alert("Error: " + error);
     }
   };
+
   const handleEndWorkout = () => {
     if (window.confirm('Are you sure you want to end this workout? Your progress will be saved.')) {
       (window as any).navigate('/');
@@ -611,16 +612,7 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
                         <span className="text-gray-400">{index + 1}.</span>
                         <span className="text-gray-900">{exercise.name || 'Unnamed Exercise'}</span>
                         <span className="text-gray-500 ml-auto">
-                          {exercise.sets && (exercise.reps || (exercise.name && exercise.name.toLowerCase().includes('plank')))
-                            ? `${exercise.sets}×${
-                                exercise.reps 
-                                  ? exercise.reps
-                                  : (exercise.name && exercise.name.toLowerCase().includes('plank'))
-                                  ? `${exercise.estimated_duration ? Math.round(exercise.estimated_duration / exercise.sets) : 45}s`
-                                  : 'time'
-                              }`
-                            : ''
-                          }
+                          {exercise.sets ? `${exercise.sets}×${exercise.reps || 'time'}` : ''}
                         </span>
                       </div>
                     ))}
@@ -743,7 +735,7 @@ function ExerciseCard({
             
             {/* Exercise Details */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-              {exercise.sets && (exercise.reps || (exercise.name && exercise.name.toLowerCase().includes('plank'))) && (
+              {exercise.sets && (
                 <span className="flex items-center gap-1">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -751,8 +743,14 @@ function ExerciseCard({
                   {exercise.sets} × {
                     exercise.reps 
                       ? `${exercise.reps} reps`
-                      : (exercise.name && exercise.name.toLowerCase().includes('plank'))
-                      ? `${exercise.estimated_duration ? Math.round(exercise.estimated_duration / exercise.sets) : 45}s hold`
+                      : exercise.name && (
+                          exercise.name.toLowerCase().includes('plank') ||
+                          exercise.name.toLowerCase().includes('hold') ||
+                          exercise.name.toLowerCase().includes('stretch') ||
+                          exercise.name.toLowerCase().includes('pose') ||
+                          exercise.name.toLowerCase().includes('flow')
+                        )
+                      ? 'time-based'
                       : 'time-based'
                   }
                 </span>

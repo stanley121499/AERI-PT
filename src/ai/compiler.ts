@@ -172,9 +172,9 @@ const FULL_BODY_TEMPLATES: ExerciseTemplate[] = [
     alternatives: ["Pike Push-ups"],
   },
   {
-    name: "Plank",
+    name: "Plank - Hold strong core position",
     sets: 3,
-    reps: "45s",
+    reps: "45s hold",
     rest_sec: 60,
     rir: 1,
     estimated_duration: 315,
@@ -229,39 +229,57 @@ const CONDITIONING_TEMPLATES: ExerciseTemplate[] = [
 // Recovery/Mobility templates
 const MOBILITY_TEMPLATES: ExerciseTemplate[] = [
   {
-    name: "Cat-Cow Stretch",
+    name: "Cat-Cow Stretch - Flow through spine movements",
     sets: 3,
-    reps: "60s",
+    reps: "45s flow",
     rest_sec: 30,
     rir: 0,
-    estimated_duration: 270,
+    estimated_duration: 225,
     equipment: [],
   },
   {
-    name: "Hip Flexor Stretch",
-    sets: 2,
-    reps: "60s each side",
+    name: "Downward Dog - Focus on lengthening spine",
+    sets: 3,
+    reps: "30s hold",
     rest_sec: 30,
     rir: 0,
-    estimated_duration: 300,
+    estimated_duration: 180,
     equipment: [],
   },
   {
-    name: "Shoulder Circles",
+    name: "Standing Forward Fold - Hinge from hips",
     sets: 2,
-    reps: "30s",
+    reps: "45s hold",
+    rest_sec: 30,
+    rir: 0,
+    estimated_duration: 150,
+    equipment: [],
+  },
+  {
+    name: "Lizard Lunge - Open hips gradually",
+    sets: 2,
+    reps: "30s hold per side",
+    rest_sec: 30,
+    rir: 0,
+    estimated_duration: 210,
+    equipment: [],
+  },
+  {
+    name: "Seated Forward Bend - Keep spine long",
+    sets: 2,
+    reps: "60s hold",
+    rest_sec: 30,
+    rir: 0,
+    estimated_duration: 180,
+    equipment: [],
+  },
+  {
+    name: "Child's Pose - Relax and breathe deeply",
+    sets: 1,
+    reps: "90s hold",
     rest_sec: 0,
     rir: 0,
-    estimated_duration: 60,
-    equipment: [],
-  },
-  {
-    name: "World's Greatest Stretch",
-    sets: 3,
-    reps: "5 each side",
-    rest_sec: 30,
-    rir: 0,
-    estimated_duration: 360,
+    estimated_duration: 90,
     equipment: [],
   },
 ];
@@ -507,8 +525,8 @@ function templateToExercisePlan(
 
 /**
  * Compile exercises from tags and profile
- * This is now just a wrapper that will be replaced by AI generation
- * Kept for backwards compatibility and as fallback
+ * This is now just a simple fallback that will be replaced by AI generation
+ * Kept for backwards compatibility when AI is not available
  */
 export function compileExercises(params: {
   focus: string;
@@ -517,24 +535,20 @@ export function compileExercises(params: {
 }): ExercisePlan[] {
   const { focus } = params;
 
-  // This function is kept as a synchronous fallback
-  // The actual generation should use generateExercisesWithAI from exerciseGenerator.ts
-  
   console.log("[Compiler] Using simple fallback exercises (AI generator should be used instead)");
 
-  // Simple fallback based on focus
+  // Very simple fallback based on focus - AI should handle the real generation
+  // Keep reps as numbers since ExercisePlan type expects number | null
   const fallbackMap: Record<string, ExercisePlan[]> = {
     upper: [
       { name: "Push-ups", sets: 3, reps: 12, rest_sec: 90, rir: null, estimated_duration: 360, order_index: 0 },
-      { name: "Dumbbell Row", sets: 3, reps: 10, rest_sec: 90, rir: null, load_kg: 15, estimated_duration: 360, order_index: 1 },
-      { name: "Pike Push-ups", sets: 3, reps: 10, rest_sec: 90, rir: null, estimated_duration: 360, order_index: 2 },
-      { name: "Plank", sets: 3, reps: null, rest_sec: 60, rir: null, estimated_duration: 240, order_index: 3 },
+      { name: "Pike Push-ups", sets: 3, reps: 10, rest_sec: 90, rir: null, estimated_duration: 360, order_index: 1 },
+      { name: "Plank - Hold for 45 seconds", sets: 3, reps: null, rest_sec: 60, rir: null, estimated_duration: 315, order_index: 2 },
     ],
     lower: [
       { name: "Bodyweight Squats", sets: 3, reps: 15, rest_sec: 90, rir: null, estimated_duration: 450, order_index: 0 },
       { name: "Lunges", sets: 3, reps: 12, rest_sec: 90, rir: null, estimated_duration: 420, order_index: 1 },
       { name: "Glute Bridges", sets: 3, reps: 15, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 2 },
-      { name: "Calf Raises", sets: 3, reps: 20, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 3 },
     ],
     conditioning: [
       { name: "Burpees", sets: 4, reps: 10, rest_sec: 60, rir: null, estimated_duration: 400, order_index: 0 },
@@ -542,10 +556,14 @@ export function compileExercises(params: {
       { name: "Jumping Jacks", sets: 3, reps: 30, rest_sec: 60, rir: null, estimated_duration: 360, order_index: 2 },
     ],
     mobility: [
-      { name: "Cat-Cow Stretch", sets: 3, reps: null, rest_sec: 30, rir: null, estimated_duration: 180, order_index: 0 },
-      { name: "Hip Flexor Stretch", sets: 2, reps: null, rest_sec: 30, rir: null, estimated_duration: 150, order_index: 1 },
-      { name: "Shoulder Circles", sets: 2, reps: null, rest_sec: 0, rir: null, estimated_duration: 60, order_index: 2 },
-      { name: "Spinal Twists", sets: 2, reps: null, rest_sec: 30, rir: null, estimated_duration: 120, order_index: 3 },
+      { name: "Cat-Cow Stretch - Flow for 45 seconds", sets: 3, reps: null, rest_sec: 30, rir: null, estimated_duration: 225, order_index: 0 },
+      { name: "Downward Dog - Hold for 30 seconds", sets: 3, reps: null, rest_sec: 30, rir: null, estimated_duration: 180, order_index: 1 },
+      { name: "Child's Pose - Hold for 90 seconds", sets: 1, reps: null, rest_sec: 0, rir: null, estimated_duration: 90, order_index: 2 },
+    ],
+    yoga: [
+      { name: "Sun Salutations - Flow for 60 seconds", sets: 3, reps: null, rest_sec: 60, rir: null, estimated_duration: 540, order_index: 0 },
+      { name: "Warrior II - Hold 45 seconds per side", sets: 2, reps: null, rest_sec: 30, rir: null, estimated_duration: 210, order_index: 1 },
+      { name: "Savasana - Relax for 5 minutes", sets: 1, reps: null, rest_sec: 0, rir: null, estimated_duration: 300, order_index: 2 },
     ],
   };
 

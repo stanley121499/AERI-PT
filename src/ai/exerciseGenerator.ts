@@ -100,19 +100,37 @@ Generate a complete list of exercises for a training session based on the focus 
 - Consider muscle balance (push/pull, upper/lower)
 - Respect user dislikes
 - Use proper exercise names (e.g., "Dumbbell Bench Press" not "DB Press")
+- Be creative with exercise selection - don't limit yourself to basic movements
+- Include variations, unilateral work, and different movement patterns
 
-**Programming:**
-- Sets: 3-5 for main lifts, 2-4 for accessories
-- Reps: 5-8 for strength, 8-12 for hypertrophy, 12-15 for endurance/accessories
-- Rest: 180s for heavy compounds, 120s for moderate, 60-90s for accessories
-- Load (kg): Suggest moderate starting weights (can be null if bodyweight)
-- Duration: Realistic time including rest periods
+**Programming Guidelines:**
+- **Strength exercises**: 3-5 sets, 5-8 reps, 120-180s rest, suggest weights
+- **Hypertrophy exercises**: 3-4 sets, 8-12 reps, 90-120s rest, suggest weights  
+- **Endurance exercises**: 2-4 sets, 12-20 reps, 60-90s rest
+- **Time-based exercises**: Be specific about duration and type
+- **Mobility/Stretching**: 1-3 sets, 30-90s holds, 30s rest
+- **Isometric holds**: 2-4 sets, 15-60s holds, 60-90s rest
+- **Flow movements**: 2-3 sets, 30-90s continuous, 30-60s rest
+
+**Time-Based Exercise Instructions:**
+For ANY exercise that involves holding a position or continuous movement for time, include the duration in the exercise name:
+- **Static holds**: "Plank - Hold for 45 seconds", "Wall Sit - Hold for 60 seconds"
+- **Per side**: "Side Plank - Hold 30 seconds per side", "Single Leg Glute Bridge - 20 seconds each side"
+- **Flow/continuous**: "Cat-Cow Stretch - Flow for 60 seconds", "Sun Salutations - 45 seconds continuous"
+- **Breathing holds**: "Deep Breathing - Hold for 30 seconds with focus"
+- **Examples**: 
+  - "Plank - Hold for 45 seconds" (sets: 3, reps: null)
+  - "Warrior III - Hold 20 seconds per side" (sets: 2, reps: null)
+  - "Cat-Cow Stretch - Flow for 60 seconds" (sets: 3, reps: null)
+  - "Dead Bug - 30 seconds per side" (sets: 3, reps: null)
+
+For time-based exercises, set reps to null and include all timing information in the exercise name.
 
 **Format:**
 Return JSON with an array of exercises. Each exercise needs:
-- name: Full exercise name
+- name: Full exercise name with brief instruction if helpful
 - sets: Number of sets
-- reps: Number of reps (or "30s" for time-based)
+- reps: Number of reps (use null for time-based exercises - put timing in name instead)
 - rest_sec: Rest period in seconds
 - load_kg: Suggested weight in kg (null if bodyweight)
 - estimated_duration_sec: Total time for this exercise (sets + reps + rest)
@@ -122,7 +140,8 @@ Return JSON with an array of exercises. Each exercise needs:
 - Include RIR (user tracks this during workout)
 - Use equipment the user doesn't have
 - Suggest exercises from the user's dislike list
-- Create dangerous or unrealistic exercises`;
+- Create dangerous or unrealistic exercises
+- Limit yourself to basic exercises - be creative!`;
 }
 
 function buildUserPrompt(context: ExerciseGenerationContext): string {
