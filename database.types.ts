@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           done: boolean | null
+          duration: number | null
           estimated_duration: number | null
           id: string
           load_kg: number | null
@@ -27,12 +28,14 @@ export type Database = {
           rest_sec: number | null
           rir: number | null
           sets: number | null
+          tutorial_video_url: string | null
           weight_note: string | null
           workout_id: string | null
         }
         Insert: {
           created_at?: string
           done?: boolean | null
+          duration?: number | null
           estimated_duration?: number | null
           id?: string
           load_kg?: number | null
@@ -42,12 +45,14 @@ export type Database = {
           rest_sec?: number | null
           rir?: number | null
           sets?: number | null
+          tutorial_video_url?: string | null
           weight_note?: string | null
           workout_id?: string | null
         }
         Update: {
           created_at?: string
           done?: boolean | null
+          duration?: number | null
           estimated_duration?: number | null
           id?: string
           load_kg?: number | null
@@ -57,6 +62,7 @@ export type Database = {
           rest_sec?: number | null
           rir?: number | null
           sets?: number | null
+          tutorial_video_url?: string | null
           weight_note?: string | null
           workout_id?: string | null
         }

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuthContext } from "../contexts/AuthContext";
 import { useUserInfoContext } from "../contexts/UserInfoContext";
 import { Sidebar } from "./Sidebar";
-import { UserInfo, UserInfoUpdate } from "../contexts/UserInfoContext";
+import { UserInfo } from "../contexts/UserInfoContext";
 import { supabase } from "../lib/supabase";
 
 /**
@@ -56,28 +56,7 @@ export function ProfilePage(): React.JSX.Element {
     }
   }, [userInfo]);
 
-  // Load profile picture URL when user loads
-  useEffect(() => {
-    if (user) {
-      loadProfilePicture();
-    }
-  }, [user]);
-
-  // Clean up duplicate records when userInfo loads
-  useEffect(() => {
-    if (userInfo && user) {
-      // Run cleanup in the background
-      cleanupDuplicateRecords().then((success) => {
-        if (success) {
-          console.log("ProfilePage - Duplicate cleanup completed");
-        }
-      }).catch((error) => {
-        console.error("ProfilePage - Error during cleanup:", error);
-      });
-    }
-  }, [userInfo, user, cleanupDuplicateRecords]);
-
-  const loadProfilePicture = async () => {
+  const loadProfilePicture = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -93,7 +72,28 @@ export function ProfilePage(): React.JSX.Element {
     } catch (error) {
       console.log('No profile picture found');
     }
-  };
+  }, [user]);
+
+  // Load profile picture URL when user loads
+  useEffect(() => {
+    if (user) {
+      loadProfilePicture();
+    }
+  }, [user, loadProfilePicture]);
+
+  // Clean up duplicate records when userInfo loads
+  useEffect(() => {
+    if (userInfo && user) {
+      // Run cleanup in the background
+      cleanupDuplicateRecords().then((success) => {
+        if (success) {
+          console.log("ProfilePage - Duplicate cleanup completed");
+        }
+      }).catch((error) => {
+        console.error("ProfilePage - Error during cleanup:", error);
+      });
+    }
+  }, [userInfo, user, cleanupDuplicateRecords]);
 
   const handleProfilePictureClick = () => {
     fileInputRef.current?.click();
@@ -235,18 +235,13 @@ export function ProfilePage(): React.JSX.Element {
         exercise_that_i_dont_like: formData.exercise_that_i_dont_like || null,
       };
 
-      // Update the existing record
+      // Use the context method to update user info
       console.log("Updating user_info with ID:", currentUserInfo.id);
       
-      const { error: updateError } = await supabase
-        .from("user_info")
-        .update(userInfoData)
-        .eq("id", currentUserInfo.id)
-        .eq("uesr_id", user.id);
+      const success = await updateUserInfo(currentUserInfo.id, userInfoData);
 
-      if (updateError) {
-        console.error("Error updating user_info:", updateError);
-        throw updateError;
+      if (!success) {
+        throw new Error("Failed to update user information");
       }
 
       console.log("Successfully updated user_info");
@@ -259,11 +254,6 @@ export function ProfilePage(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
-  };
-
-  const navigate = (path: string) => {
-    window.history.pushState({}, "", path);
-    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   if (userInfoLoading) {
