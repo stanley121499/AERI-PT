@@ -14,7 +14,7 @@ import { getLocalDateString, getTodayString } from "../utils/dateUtils";
  */
 export function CalendarPage(): React.JSX.Element {
   const { user } = useAuthContext();
-  const { workouts, createWorkout, deleteWorkout } = useWorkoutContext();
+  const { workouts, createWorkout } = useWorkoutContext();
   const { getExercisesByWorkout } = useExerciseContext();
   const { userInfo } = useUserInfoContext();
 

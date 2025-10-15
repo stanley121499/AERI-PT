@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuthContext } from "../contexts/AuthContext";
-import { useUserInfoContext } from "../contexts/UserInfoContext";
 import { Sidebar } from "./Sidebar";
 
 /**
@@ -14,7 +13,7 @@ function Calendar({ selectedDate, onDateSelect }: { selectedDate: Date; onDateSe
   const month = currentMonth.getMonth();
   
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
+  // const lastDay = new Date(year, month + 1, 0);
   const startDate = new Date(firstDay);
   startDate.setDate(startDate.getDate() - firstDay.getDay());
   
@@ -126,13 +125,13 @@ function Calendar({ selectedDate, onDateSelect }: { selectedDate: Date; onDateSe
  */
 export function Dashboard(): React.JSX.Element {
   const { user } = useAuthContext();
-  const { userInfo } = useUserInfoContext();
+  // const { userInfo } = useUserInfoContext();
   const [selectedTime, setSelectedTime] = useState<number>(15);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   // Mock data for demonstration - in real app, this would come from contexts/API
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     streak: 7,
     totalWorkouts: 23,
     avgRPE: 4.2,

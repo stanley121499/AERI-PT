@@ -43,7 +43,7 @@ export function getOpenAI(): OpenAI | null {
     
     cachedClient = new OpenAI({
       apiKey: isProduction ? "dummy-key-for-proxy" : apiKey,
-      baseURL: isProduction ? "/api" : undefined, // Use serverless function in production
+      baseURL: isProduction ? "https://aeri-pt.vercel.app/api/openai" : undefined, // Use full URL for production
       dangerouslyAllowBrowser: true, // Required for browser usage (not recommended for production)
     });
     
