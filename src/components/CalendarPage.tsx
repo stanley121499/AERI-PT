@@ -121,7 +121,7 @@ export function CalendarPage(): React.JSX.Element {
         dateStr: w.date || '',
         focus: w.focus || 'Workout'
       }));
-  }, [workouts, today]);
+  }, [workouts]);
 
   const isToday = (date: Date): boolean => {
     return date.toDateString() === today.toDateString();
