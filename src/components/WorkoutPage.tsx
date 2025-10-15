@@ -31,6 +31,7 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
   const [workoutFeedback, setWorkoutFeedback] = useState<string>("");
   const [exerciseRirValues, setExerciseRirValues] = useState<Record<string, number>>({});
   const [workoutAdaptations, setWorkoutAdaptations] = useState<string[]>([]);
+  const [workoutWeight, setWorkoutWeight] = useState<number | null>(null);
 
   // Load specific workout by ID, or today's workout, or most recent workout
   useEffect(() => {
@@ -139,11 +140,12 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
     try {
       console.log("Starting workout completion process for workout:", selectedWorkout.id);
       
-      // Update workout with feedback
+      // Update workout with feedback and weight
       console.log("Updating workout state to completed with feedback:", workoutFeedback || 'Completed via workout page');
       const workoutUpdateSuccess = await updateWorkout(selectedWorkout.id, { 
         state: 'completed',
-        feedback: workoutFeedback || 'Completed via workout page'
+        feedback: workoutFeedback || 'Completed via workout page',
+        weight: workoutWeight
       });
 
       if (!workoutUpdateSuccess) {
@@ -413,7 +415,7 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
 
         {/* Rest Timer Overlay */}
         {isResting && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 lg:ml-64">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 mx-4 text-center max-w-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">Rest Time</h2>
               <div className="text-6xl font-mono font-bold text-gray-900 mb-4">
@@ -442,12 +444,29 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
 
         {/* Feedback Collection Modal */}
         {showFeedbackModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 lg:ml-64">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 mx-4 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Workout Complete!</h2>
               <p className="text-gray-600 mb-6">
                 Please provide feedback on your workout and rate how challenging each exercise was.
               </p>
+
+              {/* Weight Entry */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Weight (kg) - Track Progress
+                </label>
+                <input
+                  type="number"
+                  value={workoutWeight || ""}
+                  onChange={(e) => setWorkoutWeight(e.target.value ? Number(e.target.value) : null)}
+                  placeholder="e.g., 70.5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter your current weight to track progress over time
+                </p>
+              </div>
 
               {/* Overall Workout Feedback */}
               <div className="mb-6">
@@ -544,7 +563,7 @@ export function WorkoutPage({ workoutId }: WorkoutPageProps): React.JSX.Element 
 
         {/* Workout Complete Modal */}
         {showWorkoutComplete && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 lg:ml-64">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 mx-4 text-center max-w-md">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

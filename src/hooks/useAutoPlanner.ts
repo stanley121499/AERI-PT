@@ -163,10 +163,11 @@ export function useAutoPlanner(options: UseAutoPlannerOptions = {}) {
 
       console.log("[Auto Planner] Generating plan with AI...");
 
-      // Generate plan (disable seasoning for speed)
+      // Generate plan (disable seasoning for speed, enable feedback analysis in production)
       const compiledDays = await planAndCompile(context, {
         horizonDays,
         aiSeasoning: false, // Faster without seasoning
+        includeFeedbackAnalysis: process.env.NODE_ENV === "production", // Enable in production only
       });
 
       console.log(`[Auto Planner] Generated ${compiledDays.length} days`);

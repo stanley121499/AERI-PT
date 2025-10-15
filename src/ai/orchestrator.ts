@@ -21,6 +21,8 @@ import { enforceCadence, taperAroundEvents, validatePlan, DEFAULT_CONSTRAINTS } 
 import { chooseThemeFromTags } from "./compiler";
 import { isOpenAIAvailable } from "./openaiClient";
 import { generateExercisesWithAI } from "./exerciseGenerator";
+import { analyzeWorkoutFeedback, WorkoutFeedbackData } from "./feedbackAnalyzer";
+import { planWorkoutAdaptation, AdaptationContext } from "./adaptationPlanner";
 
 // ============================================================================
 // Options
@@ -31,6 +33,7 @@ export interface PlanAndCompileOptions {
   aiPlannerModel?: string;     // e.g., 'gpt-4o-mini'
   aiSeasoning?: boolean;       // default true
   aiSeasoningModel?: string;   // seasoning model override
+  includeFeedbackAnalysis?: boolean; // default false
 }
 
 // ============================================================================
@@ -111,7 +114,7 @@ export async function planAndCompile(
       day.date,
       day.tags,
       contextWithHorizon,
-      { aiSeasoning, aiSeasoningModel }
+      { aiSeasoning, aiSeasoningModel, includeFeedbackAnalysis: options.includeFeedbackAnalysis }
     );
 
     compiledDays.push(compiledDay);
@@ -131,7 +134,7 @@ async function compileDayWithExercises(
   date: string,
   tags: string[],
   context: PlanningContext,
-  options: { aiSeasoning: boolean; aiSeasoningModel?: string }
+  options: { aiSeasoning: boolean; aiSeasoningModel?: string; includeFeedbackAnalysis?: boolean }
 ): Promise<CompiledDay> {
   // For rest/event days, return empty exercises
   if (action === "rest" || action === "event") {
@@ -147,12 +150,52 @@ async function compileDayWithExercises(
 
   // For train/recovery days, generate exercises with AI
   const focus = chooseThemeFromTags(tags);
-  let exercises = await generateExercisesWithAI({
+  
+  // Prepare exercise generation context
+  let exerciseContext: any = {
     focus,
     tags,
     profile: context.profile,
     sessionLengthMin: context.profile.session_length_min || 60,
-  });
+  };
+
+  // Add feedback analysis if enabled and recent workouts exist
+  if (options.includeFeedbackAnalysis && context.recent_history.length > 0) {
+    try {
+      console.log("[Orchestrator] Running feedback analysis pipeline...");
+      
+      // Stage 1: Analyze recent workout feedback
+      const recentWorkouts = context.recent_history.slice(-3); // Last 3 workouts
+      const feedbackData: WorkoutFeedbackData[] = recentWorkouts.map(workout => ({
+        workout: workout as any, // Convert HistoryDay to Workout format
+        exercises: [], // Would need to be loaded from database
+        user_feedback: (workout as any).feedback || "",
+        rir_values: {} // Would need to be loaded from exercises
+      }));
+
+      const feedbackAnalysis = await analyzeWorkoutFeedback(feedbackData);
+      
+      // Stage 2: Create adaptation strategy
+      const adaptationContext: AdaptationContext = {
+        feedback_analysis: feedbackAnalysis,
+        user_profile: context.profile,
+        recent_workouts: recentWorkouts.length,
+        user_goals: context.profile.goal || "general fitness",
+        equipment_available: context.profile.accessible_equipment || "bodyweight only"
+      };
+
+      const adaptationStrategy = await planWorkoutAdaptation(adaptationContext);
+      
+      // Stage 3: Apply adaptation to exercise generation
+      exerciseContext.adaptationStrategy = adaptationStrategy;
+      
+      console.log("[Orchestrator] Feedback analysis complete, applying adaptations");
+    } catch (error) {
+      console.warn("[Orchestrator] Feedback analysis failed, proceeding without adaptations:", error);
+    }
+  }
+
+  let exercises = await generateExercisesWithAI(exerciseContext);
 
   // Exercises are already AI-generated with cues and proper names
   // Seasoning step is no longer needed (kept in options for backwards compatibility)

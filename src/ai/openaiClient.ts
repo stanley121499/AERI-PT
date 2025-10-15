@@ -37,10 +37,17 @@ export function getOpenAI(): OpenAI | null {
   }
 
   try {
+    // In production, use our serverless function to avoid CORS and keep API key secure
+    // In development, call OpenAI directly (use browser extension for CORS)
+    const isProduction = process.env.NODE_ENV === "production";
+    
     cachedClient = new OpenAI({
-      apiKey,
+      apiKey: isProduction ? "dummy-key-for-proxy" : apiKey,
+      baseURL: isProduction ? "/api" : undefined, // Use serverless function in production
       dangerouslyAllowBrowser: true, // Required for browser usage (not recommended for production)
     });
+    
+    console.log(`[OpenAI Client] Initialized in ${isProduction ? "PRODUCTION" : "DEVELOPMENT"} mode`);
     return cachedClient;
   } catch (error) {
     console.error("Failed to initialize OpenAI client:", error);

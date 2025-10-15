@@ -87,14 +87,20 @@ Your task: Generate a 7-14 day microcycle that maximizes performance and recover
 1. Avoid hard lower-body strength (squat, deadlift, lunge focus) within 24-48h before/after high-intensity run/game-like events
 2. Insert recovery (rest/mobility/yoga) at least every 3-4 days
 3. If an event exists for a date, prefer not to add another conditioning session that day (mobility/yoga is okay)
-4. Weekly frequency is a target, allowed to flex ±1 when events or fatigue demand it
+4. **FREQUENCY COMPLIANCE**: Respect the user's target frequency per week EXACTLY - if they want 3x/week, schedule exactly 3 training days + 4 rest/recovery days
 5. Never schedule more than 3 consecutive training days
+6. **REST DAYS ARE MANDATORY**: Rest and recovery days are required, not optional
 
 **Actions:**
 - "train": strength or conditioning training
-- "recovery": mobility, yoga, pilates (active recovery)
+- "recovery": mobility, yoga, pilates (active recovery) - counts as rest day
 - "rest": complete rest day
 - "event": user's scheduled event (e.g., Park Run)
+
+**Frequency Examples:**
+- 3x/week: Mon(train), Tue(rest), Wed(train), Thu(rest), Fri(train), Sat(rest), Sun(rest)
+- 4x/week: Mon(train), Tue(train), Wed(rest), Thu(train), Fri(train), Sat(rest), Sun(rest)
+- 5x/week: Mon(train), Tue(train), Wed(train), Thu(rest), Fri(train), Sat(train), Sun(rest)
 
 **Tags:**
 Use free-form tags to describe the focus. Examples:

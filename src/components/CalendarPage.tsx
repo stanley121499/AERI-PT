@@ -575,7 +575,7 @@ export function CalendarPage(): React.JSX.Element {
 
       {/* Schedule Workout Modal */}
       {showScheduleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 lg:ml-64">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
@@ -650,7 +650,7 @@ export function CalendarPage(): React.JSX.Element {
 
       {/* Workout Detail Modal */}
       {showWorkoutDetailModal && selectedWorkout && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 lg:ml-64">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">

@@ -7,12 +7,19 @@
 
 import { ExercisePlan, UserProfile } from "./types";
 import { callJSON, isOpenAIAvailable, getDefaultPlannerModel } from "./openaiClient";
+import { AdaptationStrategy } from "./adaptationPlanner";
 
 interface ExerciseGenerationContext {
   focus: string;
   tags: string[];
   profile: UserProfile;
   sessionLengthMin?: number;
+  adaptationStrategy?: AdaptationStrategy;
+  previousWorkout?: {
+    exercises: ExercisePlan[];
+    feedback: string;
+    rir_values: Record<string, number>;
+  };
 }
 
 interface AIExerciseResponse {
@@ -126,6 +133,14 @@ For ANY exercise that involves holding a position or continuous movement for tim
 
 For time-based exercises, set reps to null and include all timing information in the exercise name.
 
+**SPECIFICITY REQUIREMENTS:**
+- **NEVER use vague descriptions** like "Yoga Mat Stretching - Flow" or "General Mobility"
+- **ALWAYS provide specific movements** - assume the user has never done the exercise before
+- **For flow exercises**: List 3-5 specific movements, e.g., "Cat-Cow, Child's Pose, Downward Dog, Cobra - Flow through each for 60 seconds"
+- **For stretching**: Specify exact positions, e.g., "Hip Flexor Stretch - Lunge position, hold 30 seconds per side"
+- **For mobility**: Name specific movements, e.g., "Shoulder Circles - 10 forward, 10 backward, 3 sets"
+- **For yoga flows**: List the sequence, e.g., "Sun Salutation A - Mountain Pose to Forward Fold to Plank to Upward Dog to Downward Dog, repeat 5 times"
+
 **Format:**
 Return JSON with an array of exercises. Each exercise needs:
 - name: Full exercise name with brief instruction if helpful
@@ -145,7 +160,7 @@ Return JSON with an array of exercises. Each exercise needs:
 }
 
 function buildUserPrompt(context: ExerciseGenerationContext): string {
-  const { focus, tags, profile, sessionLengthMin = 60 } = context;
+  const { focus, tags, profile, sessionLengthMin = 60, adaptationStrategy, previousWorkout } = context;
 
   const cleanProfile = {
     goal: profile.goal || "general fitness",
@@ -154,7 +169,7 @@ function buildUserPrompt(context: ExerciseGenerationContext): string {
     session_length: sessionLengthMin,
   };
 
-  return `Generate exercises for this workout:
+  let prompt = `Generate exercises for this workout:
 
 **Session Details:**
 - Focus: ${focus}
@@ -162,13 +177,50 @@ function buildUserPrompt(context: ExerciseGenerationContext): string {
 - Target Duration: ${sessionLengthMin} minutes
 
 **User Profile:**
-${JSON.stringify(cleanProfile, null, 2)}
+${JSON.stringify(cleanProfile, null, 2)}`;
+
+  // Add adaptation strategy if available
+  if (adaptationStrategy) {
+    prompt += `
+
+**Adaptation Strategy (Apply These Changes):**
+- Overall Intensity Modifier: ${adaptationStrategy.intensity_modifier}x
+- Progression Notes: ${adaptationStrategy.progression_notes}
+
+**Load Adjustments:**
+${adaptationStrategy.load_adjustments.map(adj => 
+  `- ${adj.exercise_pattern}: ${adj.change_kg > 0 ? '+' : ''}${adj.change_kg}kg (${adj.reason})`
+).join('\n')}
+
+**Volume Adjustments:**
+${adaptationStrategy.volume_adjustments.map(adj => 
+  `- ${adj.exercise_pattern}: ${adj.sets_change > 0 ? '+' : ''}${adj.sets_change} sets${adj.reps_change ? `, ${adj.reps_change > 0 ? '+' : ''}${adj.reps_change} reps` : ''} (${adj.reason})`
+).join('\n')}
+
+**Exercise Swaps:**
+${adaptationStrategy.exercise_swaps.map(swap => 
+  `- Replace "${swap.old_exercise_pattern}" with "${swap.new_exercise}" (${swap.reason})`
+).join('\n')}`;
+  }
+
+  // Add previous workout context if available
+  if (previousWorkout) {
+    prompt += `
+
+**Previous Workout Context:**
+- Feedback: "${previousWorkout.feedback}"
+- RIR Values: ${JSON.stringify(previousWorkout.rir_values, null, 2)}
+- Previous Exercises: ${previousWorkout.exercises.map(ex => ex.name).join(", ")}`;
+  }
+
+  prompt += `
 
 **Requirements:**
 - Generate 4-6 exercises (adjust based on session length)
 - Use ONLY equipment from: "${cleanProfile.equipment}"
 - Avoid: "${cleanProfile.dislikes}"
 - Total session should fit in ~${sessionLengthMin} minutes
+${adaptationStrategy ? '- Apply the adaptation strategy above to modify exercises' : ''}
 
 Return JSON:
 {
@@ -185,6 +237,8 @@ Return JSON:
   ],
   "session_notes": "Brief session overview"
 }`;
+
+  return prompt;
 }
 
 /**
